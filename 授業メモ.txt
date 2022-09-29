@@ -1,0 +1,235 @@
+配列とlistは違う
+List length [1,2,3]
+3　→リストの長さ
+
+List repeat 10 1
+1を10回並べて
+
+List range 3 15
+3から15までの整数を並べてくれる
+
+X=List Range 1 10 
+1から10までの整数を表示
+
+xと入力すると[1,2,......10]を表示
+
+100 :: x
+xのリストの先頭に100が入る
+xそのままはいじらず、ただ100と追加しただけ
+xと入力しても変わらない
+
+List concat [ x,y]
+xというリストとyというリストが入ったリスト→リストがくっつく
+数を足しているわけでもないし、xとyの中身の値が変化するわけではない
+
+ある値を関数に入れ、その値をリストに、さらにリストにという感じ
+
+List concat [x,["abc" "aiueo"]]ってやっても方が違うからエラー
+
+p={x=1,y=2}とやるとpにデータが入る
+
+p.x  >1   p.y  >2
+
+x
+sqrt→平方根
+
+List.map toFloat x
+→xに入っている数字をIntからFloat(実数から小数への変換)
+
+List.map は与えられた一つ一つの値にその結果を反映させる
+
+sqr t = t^2    
+f(x)=x^2と定義したのと同じ
+sqr 2と入力すると4が帰ってくる
+
+g t s = t+s
+g 3 4 
+>7
+
+List.foldl g 0 x 
+0に1がたされその結果に2がたされその結果に3が足され…
+>55 (0+1+2+......+10)
+
+xを文字列に変える
+List.map String fromInt x
+1→"1"という表記に
+
+h t s = t ++ s(文字列を結合する時は++を使う)
+h "aiueo" "abc"
+>"aiueoabc"
+
+sl = List.map String fromInt x
+slには1~10の文字列が入る
+
+List.foldl h "0" sl
+slには1~10の文字列
+
+sl="a" "b" "c"
+List.foldl h "0" 
+>l　とすると
+"a"++"0" = "a0"
+"b"++"a0"="ba0"
+"c"++"ba0"="cba0"
+これを順番にするには？
+
+h2 s t = t ++ s (逆向きにするとできる)
+
+-----------
+Listには添字がなくてただ並んでいるだけのもの
+
+f2 s t = s*t
+f2 3 5
+15
+
+List.indexedMap f2 x
+0,2,6,12,20,30,42,56,72,90
+
+xは1~10
+添字を計算する
+1.2.3.4.5.6.7.8.9
+添字がsで中身がt
+0*1=0   1*2=2
+
+ss = List repeat 10 "a"
+"a"が10回繰り返される
+a a a a a a a a a a
+
+h3 s t = (String fromInt s) ++ t
+>h3 3 "abc"
+"3abc"
+
+List.IndexedMap h3  ss
+添字と中身を結合
+0a 1a 2a 3a .........9a
+
+----
+入力するもの
+
+ターミナルに
+elm init
+
+---
+elm reactor 
+表示されたurlにアクセス
+
+Atom
+新規ファイル作成
+フォルダの中のsrcに保存
+first.elmと保存
+
+---
+
+module First exposing(..)
+
+import Browser
+import Html
+
+main = Browser.sandbox {init=0 update=update, view=view}
+
+//initは初期化
+//init=0はパズルが一つということ
+
+update msg model = 
+  model 
+  
+  //updateに伝わる
+ // modelがパズル
+  
+  view model =
+  	Html.h1 [ ] [Html.text "My First Elm Program"]
+  	
+  	//ユーザーの行動
+
+
+
+-----
+Msg →メッセージ click→クリック
+Model は自分たちで定義する
+alias 
+
+f:x->y   xを受け取ったらyを返す
+
+＜課題＞
+
+4つのピースを9つのピースに増やす
+
+<できればやる>
+今は押されたところが反転する
+→これではパズルが作れない
+→隣り合ってるもののonoffも切り替えられるように
+→押された場所との差が1以内だったらいい
+押されたパズルの右下左右も反転するように
+
+----
+List.map (/p -> if abs (p.x==pos.x)^2 && (p.y==pos.y)^2 <= 1 then
+
+
+p→toggleに入っている一つ一つのピースの名前(変更可能)
+単位円の範囲に入っていればonoffを切り替える
+クリックされた場所のposとpとの距離が1以内だったら切り替える
+abs　→絶対値
+
+----
+9つも書くのは大変
+
+5をn、24を2nとかにするといい
+
+---
+ターミナル
+elm repl
+List.range 0 24 →Listが24表示  
+List.map (/i -> modBy 5 i )(List.range 0 24)   --5で割ったあまり
+modBy あまりを返す
+
+List.map(/i-> i// 5 )(List.range 0.24)  ---5で割った商
+//整数での値
+
+→x座標、y座標に使える
+
+List.map (/i -> {x = modBy 5 i , y = i // 5 , onoff=False })(List.range 0 24)
+
+
+四角の色変わるもの
+Taggle: Model -> Position ->Model --taggleをslideに変更
+Taggle model pos =
+  List.map (/pp -> if abs (pp.x==pos.x)^2 && (pp.y==pos.y)^2 <= 1 then
+                    {pp|onoff=not pp.onoff}
+                    else
+                      pp
+                    ) model
+
+,stroke "black" --黒い線で縁取り
+----
+15パズルを作る
+[3]={1,2,3}
+[3]^2 = [3] * [3] = {(1,1),(1,2) ... (3,3)}
+
+
+pはピースを指してる
+p は　[3]^2(座標) * [3^2] ←これがmodel
+p = (x,y,n) 座標と背番号でできている
+
+例えば、4というピースは(3,2,4)  x座標が3、y座標が2、パズルの文字が4
+
+15パズルのアクションはクリックでOK
+
+Slide{x,y} --これがメッセージ
+
+PP →[3]^2 * [3^2] 位置と背番号
+
+slide: Model -> Position ->Model --taggleをslideに変更
+slide model pos =
+  List.map (/pp -> if abs (pp.x==pos.x)^2 && (pp.y==pos.y)^2 = 1 then
+                    {pp|onoff=not pp.onoff}
+                    else
+                      pp
+                    ) model
+
+POSとPPが隣り合っているかつPPがスペースなら移動可能　→スペースを0とする
+posが押された場所、ppが隣
+
+--
+fill "pink"とすると空白も塗られてしまう
+
+--
+List filter(/i -> (modBy

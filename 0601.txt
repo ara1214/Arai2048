@@ -1,0 +1,70 @@
+Timerを使うとき
+imoport Time
+main Browser.element{init=init
+			update=update
+			view = view
+			subscriptions = subscriptions} 
+			//初期化
+
+subsucription 
+指定した時間おきにモデルを動かすことができる
+
+今回は時計がメッセージを発生している
+
+impo
+
+elm install elm/random
+
+Randomの扱い方について
+乱数を発生させたときにそれを伝える必要がある
+→コマンドを使う
+
+Cmd.none　→ Random.generate NewPiece(Random.int 0 5) //0~5までを発生させる
+
+//乱数を発生させてくださいというコマンドに変更
+//乱数を発生させ、発生させたらNewPieceという形で伝えてください
+
+New Piece x -> ({model | config={x=x,y=0}:model.config})
+		,Cmd.None)
+
+//New Piece xなので、x座標とする。yは0のまま。
+//新しいピースとくっつける
+//1秒おきにブロックが落ち新しいブロックが出てくる
+
+
+--
+ネットでelm keyboard eventと調べる
+
+import Browser.Events exposing(onKeyDown)
+
+import Json.Decode as Json
+import Keyboard.Event exposing(keyboae¥rdEvent, decodeKeyBoardEvent)
+
+elm install elm/json
+
+elm insstall Ginra
+
+---
+
+sub.batch[
+	Time.ecery 1000 Elapsed
+	,onKeyDown(Json.map Move decodeKeyBoardEvent)
+
+---
+Move keydata ->   //押されたキーのデータと一緒にとんでくる
+ let 
+	key = keydata.key
+ in
+	case key of
+	 Just k -
+	if k== "ArrowRight" then   //keyboardを押すと右に
+	(right model , Cmd.none)
+	else if k == "ArrowLeft" then //左に
+	(left model, Cmd.none)
+	   (model, Cmd.none)
+	->(model,Cmd.none)
+
+right: Model -> Model
+right model = {model | config  = List.map (/p -> {p|}
+
+

@@ -1,0 +1,73 @@
+import Json.Decode as JD  //Json.DecodeをJDという名前で参照できるようにする
+
+main = Browser.element{init = init
+										,update = update
+										,view = view
+										,subscriptions = subscriptions}  //プログラムの中ではなく、外からの
+										アクションを受け取るもの
+									
+type alias Peg = {id:Int, x:Int, y:Int, moving:Boool } //一つ一つの球を作る			
+type alias Config = LIst Peg							 
+type alias Model = {config : Config , mouse : Mouse}
+type alias Mouse = {x:Float y:Float} //x座標とy座標をキープ
+type Msg  = MouseMoved Float Float    //Mouseがx座標が移動した
+
+init: () -> (Model, Cmd Msg) //モデルを返すと同時に仕事を返す
+init  _ = ({mouse = {x=0,y=0}
+				,config = [Peg 0 1 1 False
+							   ,Peg 1 2 3 False]}   
+				,cmd.none) //初期値をいれる
+				
+update : Msg -> Model -> (Model, Cmd Msg)
+update msg model = 
+	case msg of 
+	MouseMoved x y -> ({model | mouse=Debug.log "move" {x=x,y=y, Cmd.none) //マウスが動いたという情報がきたらマウスの情報を交換する  
+	//Debugと書くことでコンソールにマウスの位置が表示される
+	
+unit = 50 
+pegView : Peg -> Svg Msg  //Pegの情報を書く
+pegView peg =
+	circle [cx (String.fromInt (unit*peg.x))
+			  ,cy(String.fromInt(unit*peg.y))
+			  ,r(String.fromInt(unit//2))
+			  ,fill "brown"
+			  ,stroke"black"]
+			  [ ]
+
+view: Model -> Html Msg //モデルを描画してくれる
+view model =
+	Html.div[]
+		[svg [ width "400"
+			,height "400"     //キャンバス
+			,onMouseMove MouseMoved] //メソッドの作成
+			[
+			circle [ cx (String.fromFloat model.mouse.x)
+						,cy (String.fromFloat model.mouse.y)  //数字を文字列に変換
+						,r "30 " //マウスの位置に半径30の円
+						,fill "brown" //茶色
+						,stroke "black" ] 
+			]
+		]
+	
+onMouseMove msg = 
+	on "mousemove"  //ここでマウスの情報を読み込む	
+	(JD.map2 msg 
+		(JD.field "offsetX" JD.float)
+		(JD.field "offsetY" JD.float)
+	)
+
+subscriptions: Model -> sub Msg
+subscriptions model = 
+	Sub.none //モデルを受けても何もしない
+	
+
+	
+	-----
+	ターミナル　
+	svgのダウンロード
+	elm install elm/svg
+	
+	jsonのダウンロード
+	elm install elm/json
+	
+	elm reactor

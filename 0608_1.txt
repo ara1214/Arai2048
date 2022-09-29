@@ -1,0 +1,95 @@
+import Json.Decode as JD  //Json.DecodeをJDという名前で参照できるようにする
+import Browser.Events 
+
+main = Browser.element{init = init
+										,update = update
+										,view = view
+										,subscriptions = subscriptions}  //プログラムの中ではなく、外からの
+										アクションを受け取るもの
+									
+type alias Peg = {id:Int, x:Int, y:Int, moving:Boool } //一つ一つの球を作る			
+type alias Config = LIst Peg							 
+type alias Model = {config : Config , mouse : Mouse}
+type alias Mouse = {x:Float y:Float} //x座標とy座標をキープ
+type Msg  = MouseMoved Float Float    //Mouseがx座標が移動した
+					| DragStart Peg //PegをDragStartしたよというメッセージ
+					| DragEnf 
+
+init: () -> (Model, Cmd Msg) //モデルを返すと同時に仕事を返す
+init  _ = ({mouse = {x=0,y=0}
+				,config = [Peg 0 1 1 False
+							   ,Peg 1 2 3 False]}   
+				,cmd.none) //初期値をいれる
+				
+update : Msg -> Model -> (Model, Cmd Msg)
+update msg model = 
+	case msg of 
+	MouseMoved x y -> ({model | mouse=Debug.log "move" {x=x,y=y, Cmd.none)
+	 //マウスが動いたという情報がきたらマウスの情報を交換する  
+	//Debugと書くことでコンソールにマウスの位置が表示される
+	DragStart peg -> ({model | config = List.map
+								 (/p -> if p.id == peg.id then
+									Debug.log"down" {p| moving=True}  
+									 else
+								 	p)  model.config}
+								 ,Cmd.none) 
+	//configはリスト。それが読み込まれたら一つ一つを書き換える
+	//マウスが押されたときに、押されたIDを持つPEを動かす
+	DragEnd -> ({model | config=List.map
+												(/p->if p.moving then
+												{p | moving=False
+												,x=floar ( model.mouse.x/unit ) 
+												,y= floar (model.mouse.y/unit ) }  //floarを使うと
+												else
+												p)model.config} 
+						,Cmd.none) //コマンドは発生させない
+						
+						//動かした後マウスを離すと元に戻ってしまう。本当はその場に止まらせたい
+						//moving Trueならmouseのx座標とy座標をunitmで割ったものに置き換える
+	
+unit = 50 
+pegView : Peg -> Svg Msg  //指定されたx座標、y座標にPegの情報を書く  
+pegView peg =
+	circle [cx (String.fromInt (unit*peg.x))
+			  ,cy(String.fromInt(unit*peg.y))
+			  ,r(String.fromInt(unit//2))
+			  ,fill "brown"
+			  ,stroke"black"
+			  ,onMouseDown(DragStart peg)] //マウスが押されたらメッセージを発動
+			  [ ]
+			  
+movingView: Float -> Float -> Svg Msg
+movingView x y =
+circle [cx (String.fromFroat x))
+			  ,cy(String.fromFloat y))
+			  ,r(String.fromInt(unit//2))
+			  ,fill "brown"
+			  ,stroke"black"
+			  ]
+			  [ ]
+			  
+view: Model -> Html Msg //モデルを描画してくれる
+view model =
+	Html.div[]
+		[svg [ width "400"
+			,height "400"     //キャンバス
+			,onMouseMove MouseMoved] //メソッドの作成
+			(List.map pegView (/p -> if p.moving then
+														movingView model.mouse.x model.mouse.y  //動いてるならマウスの位置に
+														else
+														pegView p) //動いてないならいつもの位置に
+			model.config) 
+		]
+	
+onMouseMove msg = 
+	on "mousemove"  //ここでマウスの情報を読み込む	
+	(JD.map2 msg 
+		(JD.field "offsetX" JD.float)
+		(JD.field "offsetY" JD.float)
+	)
+
+subscriptions: Model -> sub Msg
+subscriptions model = 
+	Browser.Events.onMouseUp (JD.sudcceed DragEnd)
+	//ブラウザ全体で呼び出す
+	//マウスが上がったときにDragEndというメッセージが発生
