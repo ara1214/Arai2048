@@ -25,6 +25,8 @@ type alias Coord = {x:Int
 type alias Piece = {x:Int
                    ,y:Int
                    ,d:Int
+                   ,oldx:Int
+                   ,oldy:Int
                    }
 type alias Model = {conf: List Piece
                     ,startAt: {x:Float,y:Float}}
@@ -40,10 +42,10 @@ type Msg = Up
 init: () -> (Model, Cmd Msg)
 init _ = (
         {conf=
-        [{x=3,y=2,d=4}
-        ,{x=2,y=2,d=4}
-        ,{x=2,y=3,d=2}
-        ,{x=1,y=1,d=2}
+        [{x=3,y=2,d=4,oldx=0,oldy=0}
+        ,{x=2,y=2,d=4,oldx=0,oldy=0}
+        ,{x=2,y=3,d=2,oldx=0,oldy=0}
+        ,{x=1,y=1,d=2,oldx=0,oldy=0}
         ]
         ,startAt={x=0,y=0}}
        ,Cmd.none
@@ -123,7 +125,7 @@ put digit place model =
         rest = List.filter (\c -> not <| find c model) full
         coord = Maybe.withDefault {x=0,y=0} <| List.head <| List.drop (place-1) rest
     in
-        {model|conf={x=coord.x, y=coord.y, d=digit} :: model.conf}
+        {model|conf={x=coord.x, y=coord.y, d=digit, oldx=0, oldy=0} :: model.conf}
 
 splitX: List Piece -> List (List Piece)
 splitX conf =
@@ -137,9 +139,9 @@ splitY conf =
 rmDup: List Piece -> List Piece
 rmDup line =
     let
-        h = Maybe.withDefault {x=0,y=0,d=0} <| List.head line
+        h = Maybe.withDefault {x=0,y=0,d=0,oldx=0,oldy=0} <| List.head line
         t = List.drop 1 line
-        n = Maybe.withDefault {x=0,y=0,d=1} <| List.head t
+        n = Maybe.withDefault {x=0,y=0,d=1,oldx=0,oldy=0} <| List.head t
     in
         if (List.length line) == 0 then
             []
@@ -155,25 +157,25 @@ moveUp col =
     let
         sorted =  rmDup <| List.sortBy .y col
     in
-        List.indexedMap (\idx digit -> {digit | y=idx}) sorted
+        List.indexedMap (\idx digit -> {digit | y=idx,oldx=digit.x,oldy=digit.y}) sorted
 
 moveDown col =
     let
         sorted = rmDup <| List.reverse <| List.sortBy .y col
     in
-        List.indexedMap (\idx digit -> {digit | y=3-idx}) sorted
+        List.indexedMap (\idx digit -> {digit | y=3-idx,oldx=digit.x,oldy=digit.y}) sorted
 
 moveRight row =
     let
         sorted = rmDup <| List.reverse <| List.sortBy .x row
     in
-        List.indexedMap (\idx digit -> {digit | x=3-idx}) sorted
+        List.indexedMap (\idx digit -> {digit | x=3-idx,oldx=digit.x,oldy=digit.y}) sorted
 
 moveLeft row =
     let
         sorted = rmDup <| List.sortBy .x row
     in
-        List.indexedMap (\idx digit -> {digit | x=idx}) sorted
+        List.indexedMap (\idx digit -> {digit | x=idx,oldx=digit.x,oldy=digit.y}) sorted
 
 up conf =
     Debug.log "up:" <| List.concat <| List.map moveUp (splitX conf)
@@ -187,6 +189,22 @@ right conf =
 left conf =
     Debug.log "left:" <| List.concat <| List.map moveLeft (splitY conf)
 
+fadeOut : Int -> Int -> Int -> Int -> Animation
+fadeOut x y oldx oldy=
+    Animation.fromTo
+        { duration = 1000
+        , options = []
+        }
+        [ P.opacity 0, P.x (toFloat(oldx*50)), P.y(toFloat(oldy*50))]
+        [ P.opacity 1, P.x (toFloat(x*50)), P.y(toFloat(y*50))]
+
+animatedSvg =
+      Animated.svg
+        { class = Svg.Attributes.class
+        }
+animatedG : Animation -> List (Svg.Attribute msg) -> List (Svg msg) -> Svg msg
+animatedG =
+    animatedSvg Svg.g
 
 panel digit =
     let
@@ -197,10 +215,10 @@ panel digit =
                 8 -> "#df8"
                 _ -> "#fff"
     in
-    g []
+    animatedG (fadeOut digit.x digit.y digit.oldx digit.oldy)[]
         [
-         rect [x (String.fromInt (digit.x*50))
-              ,y (String.fromInt (digit.y*50))
+         rect [x "0"
+              ,y "0"
               ,fill color
               ,fillOpacity "0.5"
               ,width "50"
@@ -209,8 +227,8 @@ panel digit =
               ,strokeWidth "5"
               ]
              []
-        , text_ [x (String.fromInt (digit.x*50+25))
-              ,y (String.fromInt (digit.y*50+25))
+        , text_ [x "20"
+              ,y "30"
                ]
             [text (String.fromInt digit.d)]
         ]
@@ -224,89 +242,6 @@ cell pos =
          ]
         []
 
-buttonUp =
-    g[transform "translate(100 250)"
-     ,onClick Up
-     ]
-        [
-         (rect [x "0"
-               ,y "0"
-               ,width "50"
-               ,height "50"
-               ,fill "#fff"
-               ,stroke "black"
-              ]
-             [])
-        ,(text_ [x "10"
-               ,y "35"
-                ,fontSize "30"
-                ,fill "#aaf"
-               ]
-             [text "⬆"])
-        ]
-
-buttonDown =
-    g[transform "translate(100 350)"
-     ,onClick Down
-     ]
-        [
-         (rect [x "0"
-               ,y "0"
-               ,width "50"
-               ,height "50"
-               ,fill "#fff"
-               ,stroke "black"
-              ]
-             [])
-        ,(text_ [x "10"
-               ,y "35"
-                ,fontSize "30"
-                ,fill "#aaf"
-               ]
-             [text "⬇"])
-        ]
-
-
-buttonRight =
-    g[transform "translate(150 300)"
-     ,onClick Right]
-        [
-         (rect [x "0"
-               ,y "0"
-               ,width "50"
-               ,height "50"
-               ,fill "#fff"
-               ,stroke "black"
-              ]
-             [])
-        ,(text_ [x "10"
-               ,y "35"
-                ,fontSize "30"
-                ,fill "#aaf"
-               ]
-             [text "➡"])
-        ]
-
-buttonLeft =
-    g[transform "translate(50 300)"
-     ,onClick Left
-     ]
-    [
-     (rect [x "0"
-           ,y "0"
-           ,width "50"
-           ,height "50"
-           ,fill "#fff"
-           ,stroke "black"
-           ]
-          [])
-    ,(text_ [x "10"
-            ,y "35"
-            ,fontSize "30"
-            ,fill "#aaf"
-            ]
-          [text "⬅"])
-    ]
 myOnDown : (Pointer.Event -> msg) -> Html.Attribute msg
 myOnDown =
     { stopPropagation = False, preventDefault = True }
