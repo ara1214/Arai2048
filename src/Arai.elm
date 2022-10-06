@@ -8,6 +8,10 @@ import Html exposing (Html)
 import Json.Decode
 import Random
 import Html.Events.Extra.Pointer as Pointer
+import Simple.Animation as Animation exposing (Animation)
+import Simple.Animation.Animated as Animated
+import Simple.Animation.Property as P
+
 
 main = Browser.element {init=init
                        ,update=update
@@ -303,12 +307,16 @@ buttonLeft =
             ]
           [text "⬅"])
     ]
+myOnDown : (Pointer.Event -> msg) -> Html.Attribute msg
+myOnDown =
+    { stopPropagation = False, preventDefault = True }
+        |> Pointer.onWithOptions "pointerdown"
 
 view model =
   Html.div[]
     [svg [width "600"
         ,height "600"
-        ,Pointer.onDown (\event -> PDown event)
+        ,myOnDown (\event -> PDown event)
         ,Pointer.onUp (\event -> PUp event)
         ]<|
         List.concat  [
