@@ -246,8 +246,8 @@ myOnDown =
 
 view model =
   Html.div[]
-    [svg [width "600"
-         ,height "600"
+    [svg [width "300"
+         ,height "300"
          ,myOnDown (\event -> PDown event)
          ,Pointer.onUp (\event -> PUp event)
          ,Html.Attributes.style "touch-action" "none"
@@ -275,7 +275,6 @@ view model =
                            text "Playing"]
                 ]
             ]
-        ,Html.text((String.fromFloat model.startAt.x)++","++(String.fromFloat model.startAt.y))
         ]
 relativePos : Pointer.Event -> ( Float, Float )
 relativePos event =

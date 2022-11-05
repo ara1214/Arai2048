@@ -5848,7 +5848,6 @@ var $author$project$Arai3$cell = function (pos) {
 		_List_Nil);
 };
 var $elm$html$Html$div = _VirtualDom_node('div');
-var $elm$core$String$fromFloat = _String_fromNumber;
 var $elm$virtual_dom$VirtualDom$Custom = function (a) {
 	return {$: 'Custom', a: a};
 };
@@ -6302,6 +6301,7 @@ var $andrewMacmurray$elm_simple_animation$Internal$Animation$iterationName = fun
 		return 'count-' + $elm$core$String$fromInt(count);
 	}
 };
+var $elm$core$String$fromFloat = _String_fromNumber;
 var $andrewMacmurray$elm_simple_animation$Internal$Ease$toString = function (e) {
 	switch (e.$) {
 		case 'Cubic':
@@ -7020,8 +7020,8 @@ var $author$project$Arai3$view = function (model) {
 				$elm$svg$Svg$svg,
 				_List_fromArray(
 					[
-						$elm$svg$Svg$Attributes$width('600'),
-						$elm$svg$Svg$Attributes$height('600'),
+						$elm$svg$Svg$Attributes$width('300'),
+						$elm$svg$Svg$Attributes$height('300'),
 						$author$project$Arai3$myOnDown(
 						function (event) {
 							return $author$project$Arai3$PDown(event);
@@ -7079,9 +7079,7 @@ var $author$project$Arai3$view = function (model) {
 										model.gameOver ? $elm$svg$Svg$text('Game Over') : $elm$svg$Svg$text('Playing')
 									]))
 							])
-						]))),
-				$elm$html$Html$text(
-				$elm$core$String$fromFloat(model.startAt.x) + (',' + $elm$core$String$fromFloat(model.startAt.y)))
+						])))
 			]));
 };
 var $author$project$Arai3$main = $elm$browser$Browser$element(
