@@ -1,4 +1,4 @@
-module Arai exposing(..)
+port module Arai3 exposing(..)
 
 import Browser
 import Svg exposing(..)
@@ -7,13 +7,14 @@ import Svg.Events exposing(..)
 import Html exposing (Html)
 import Html.Attributes
 import Json.Decode
+import Json.Encode as En
 import Random
 import Html.Events.Extra.Pointer as Pointer
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
 
-
+port sound: En.Value -> Cmd msg
 main = Browser.element {init=init
                        ,update=update
                        ,view=view
@@ -30,13 +31,11 @@ type alias Piece = {x:Int
                    ,oldy:Int
                    }
 type alias Model = {conf: List Piece
-                    ,startAt: {x:Float,y:Float}}
+                    ,startAt: {x:Float,y:Float}
+                    ,gameOver: Bool
+                  }
 
-type Msg = Up
-         |Down
-         |Left
-         |Right
-         |RandAdd Int
+type Msg = RandAdd Int
          |PDown Pointer.Event
          |PUp Pointer.Event
 
@@ -48,74 +47,71 @@ init _ = (
         ,{x=2,y=3,d=2,oldx=0,oldy=0}
         ,{x=1,y=1,d=2,oldx=0,oldy=0}
         ]
-        ,startAt={x=0,y=0}}
+        ,startAt={x=0,y=0}
+        ,gameOver=False}
        ,Cmd.none
        )
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
-    case msg of
-        Up -> ({model|conf=up model.conf}
-              , Random.generate RandAdd
-                  (Random.int 1 (16 - (List.length <| up model.conf)))
-              )
-        Down -> ({model|conf=down model.conf}
-                   , Random.generate RandAdd
-                       (Random.int 1 (16 - (List.length <| down model.conf)))
-                   )
-        Right -> ({model|conf=right model.conf}
-                 , Random.generate RandAdd
-                     (Random.int 1 (16 - (List.length <| right model.conf)))
-                 )
-        Left -> ({model|conf=left model.conf}
-                 , Random.generate RandAdd
-                     (Random.int 1 (16 - (List.length <| left model.conf)))
-                 )
-        RandAdd place -> (put 2 place model, Cmd.none)
-        PDown event ->
-          let
-              px = Tuple.first event.pointer.offsetPos
-              py = Tuple.second event.pointer.offsetPos
-              dummy = Debug.log "Down" (px,py)
-          in
-              ({model | startAt={x=px,y=py}},Cmd.none)
-        PUp event ->
-          let
-              px = Tuple.first event.pointer.offsetPos
-              py = Tuple.second event.pointer.offsetPos
-              vx=px-model.startAt.x
-              vy=py-model.startAt.y
+    if isMovable model then
+        case msg of
+            RandAdd place -> (put 2 place model, sound(En.bool True))
+            PDown event ->
+                let
+                    px = Tuple.first event.pointer.offsetPos
+                    py = Tuple.second event.pointer.offsetPos
+                    dummy = Debug.log "Down" (px,py)
+                in
+                    ({model | startAt={x=px,y=py}},Cmd.none)
+            PUp event ->
+                let
+                    px = Tuple.first event.pointer.offsetPos
+                    py = Tuple.second event.pointer.offsetPos
+                    vx=px-model.startAt.x
+                    vy=py-model.startAt.y
+                in
+                    if vx>0 && vx > vy && vy > -vx && (List.length <| right model.conf) < 16 then
+                        ({model|conf=right model.conf}
+                        , Random.generate RandAdd
+                            (Random.int 1 (16 - (List.length <| right model.conf)))
+                        )
+                    else if vx<0 && vx < vy && vy < -vx && (List.length <| left model.conf) < 16 then
+                             ({model|conf=left model.conf}
+                             , Random.generate RandAdd
+                                 (Random.int 1 (16 - (List.length <| left model.conf)))
+                             )
+                    else if vy>0 && vy>vx && vy > -vx && (List.length <| down model.conf) < 16 then
+                             ({model|conf=down model.conf}
+                             , Random.generate RandAdd
+                                 (Random.int 1 (16 - (List.length <| down model.conf)))
+                             )
+                    else if vy<0 && vy<vx && vy < -vx && (List.length <| up model.conf) < 16 then
+                             ({model|conf=up model.conf}
+                             , Random.generate RandAdd
+                                 (Random.int 1 (16 - (List.length <| up model.conf)))
+                             )
+                    else
+                        ({model|gameOver=True},Cmd.none)
+    else
+        ({model|gameOver=True}, Cmd.none)
 
-          in
-              if vx>0 && vx > vy && vy > -vx then
-                ({model|conf=right model.conf}
-                , Random.generate RandAdd
-                (Random.int 1 (16 - (List.length <| right model.conf)))
-                )
-              else if vx<0 && vx < vy && vy < -vx then
-                ({model|conf=left model.conf}
-                , Random.generate RandAdd
-                (Random.int 1 (16 - (List.length <| left model.conf)))
-                )
-              else if vy>0 && vy>vx && vy > -vx then
-                ({model|conf=down model.conf}
-                , Random.generate RandAdd
-                (Random.int 1 (16 - (List.length <| down model.conf)))
-                )
-              else if vy<0 && vy<vx && vy < -vx then
-                ({model|conf=up model.conf}
-                , Random.generate RandAdd
-                (Random.int 1 (16 - (List.length <| up model.conf)))
-                )
-              else
-                (model,Cmd.none)
-
-direction: Float->Float->Msg
-direction vx vy =
-  Right
 find: Coord -> Model -> Bool
 find coord model =
     (List.length <| List.filter (\m -> coord.x==m.x && coord.y==m.y) model.conf) >= 1
+
+adjSameColor : Piece -> Piece -> Bool
+adjSameColor p q =
+    if (abs(p.x - q.x) + abs(p.y - q.y)) == 1 && p.d == q.d then
+        True
+    else
+        False
+
+isMovable: Model -> Bool
+isMovable model =
+    (List.length model.conf < 16) ||
+        (List.foldl (\p b -> b || (List.foldl (\q found -> found || (adjSameColor p q)) False model.conf))
+             False model.conf)
 
 put: Int -> Int -> Model -> Model
 put digit place model =
@@ -245,17 +241,17 @@ cell pos =
 
 myOnDown : (Pointer.Event -> msg) -> Html.Attribute msg
 myOnDown =
-    { stopPropagation = False, preventDefault = True }
+    { stopPropagation = True, preventDefault = True }
         |> Pointer.onWithOptions "pointerdown"
 
 view model =
   Html.div[]
-    [svg [width "200"
-        ,height "200"
-        ,myOnDown (\event -> PDown event)
-        ,Pointer.onUp (\event -> PUp event)
-        ,Html.Attributes.style "touch-action" "none"
-        ]<|
+    [svg [width "600"
+         ,height "600"
+         ,myOnDown (\event -> PDown event)
+         ,Pointer.onUp (\event -> PUp event)
+         ,Html.Attributes.style "touch-action" "none"
+         ]<|
         List.concat  [
              [rect [x "0"
                    ,y "0"
@@ -269,8 +265,15 @@ view model =
              ,List.concat <| (List.map
                                   (\x -> List.map (\y->cell {x=x, y=y}) (List.range 0 3))
                                   (List.range 0 3))
-            --,[buttonUp, buttonLeft, buttonRight, buttonDown]
              ,(List.map panel model.conf)
+             ,[text_[x "50"
+                      ,y "250"
+                      ,stroke "red"
+                      ][if model.gameOver then
+                         text "Game Over"
+                         else
+                           text "Playing"]
+                ]
             ]
         ,Html.text((String.fromFloat model.startAt.x)++","++(String.fromFloat model.startAt.y))
         ]
